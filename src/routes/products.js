@@ -2,29 +2,15 @@ const express = require("express");
 const Product = require("../models/Product");
 const router = express.Router();
 
-router.get("/product", async (req, res) => {
-	const products = await Product.find();
+router.get("/products", async (req, res) => {
+  const products = await Product.find();
 
-	res.render("pages/products.html", {
-		title: "Productos",
-		file: "product",
-		products,
-	});
+  res.json({ ok: true, products });
 });
 
-router.get("/product/:id", async (req, res) => {
-	const product = await Product.findById(req.params.id);
-	res.render("pages/product.html", {
-		title: product.name + " - ver producto",
-		file: "",
-		product,
-	});
+router.get("/products/:id", async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  res.json({ ok: true, product });
 });
-
-router.post("/product", (req, res) => {});
-
-router.put("/product/:id", (req, res) => {});
-
-router.delete("/product/:id", (req, res) => {});
 
 module.exports = router;

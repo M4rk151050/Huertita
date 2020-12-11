@@ -5,43 +5,41 @@ const Contact = require("../models/Contact");
 
 const { isAuthenticated, isAdmin, isUser } = require("../helpers/auth");
 
-router.get("/contact", [isAuthenticated, isUser], (req, res) => {
-	res.render("pages/contact.html", { title: "Contacto", file: "contact" });
-});
+// router.get("/contact", [isAuthenticated, isUser], (req, res) => {
+//   res.render("pages/contact.html", { title: "Contacto", file: "contact" });
+// });
 
 router.post("/contact", async (req, res) => {
-	const { name, lastname, phone, message } = req.body;
-	const errors = [];
+  const { name, lastname, phone, message } = req.body;
+  const errors = [];
 
-	if (name.length === 0) {
-		errors.push({ text: "El nombre es requerido" });
-	}
-	if (lastname.length === 0) {
-		errors.push({ text: "El apellido es requerido" });
-	}
-	if (phone.length === 0) {
-		errors.push({ text: "El telefono es requerido" });
-	}
-	if (message.length === 0) {
-		errors.push({ text: "El mensaje es requerido" });
-	}
+  if (name.length === 0) {
+    errors.push({ text: "El nombre es requerido" });
+  }
+  if (lastname.length === 0) {
+    errors.push({ text: "El apellido es requerido" });
+  }
+  if (phone.length === 0) {
+    errors.push({ text: "El telefono es requerido" });
+  }
+  if (message.length === 0) {
+    errors.push({ text: "El mensaje es requerido" });
+  }
 
-	const email = req.user.email;
+  const email = req.user.email;
 
-	if (errors.length > 0) {
-		req.flash("error_msg", errors);
-		req.flash("data", { name, lastname, phone, message });
-		res.redirect("/contact");
-	}
+  if (errors.length > 0) {
+    return res.status(500).json({ ok: false, errors });
+    // req.flash("error_msg", errors);
+    // req.flash("data", { name, lastname, phone, message });
+    // res.redirect("/contact");
+  }
 
-	const newContact = new Contact({ name, email, phone, message });
-	newContact.dateShow = moment(Date.now()).format("DD-MM-YY   hh:mm:ss");
-	await newContact.save();
+  const newContact = new Contact({ name, email, phone, message });
+  newContact.dateShow = moment(Date.now()).format("DD-MM-YY   hh:mm:ss");
+  await newContact.save();
 
-	req.flash("success_msg", "Mensaje enviado correctamente");
-	res.redirect("/contact");
+  return res.json({ ok: true });
 });
-
-
 
 module.exports = router;

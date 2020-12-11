@@ -8,105 +8,103 @@ const Product = require("../../models/Product");
 const { isAuthenticated, isAdmin } = require("../../helpers/auth");
 
 router.use(
-	fileUpload({
-		// useTempFiles: true,
-	})
+  fileUpload({
+    // useTempFiles: true,
+  })
 );
 
 router.post(
-	"/admin/upload/:id",
-	[isAuthenticated, isAdmin],
-	async (req, res) => {
-		const id = req.params.id;
+  "/admin/upload/:id",
 
-		if (!req.files)
-			return res.status(400).json({
-				ok: false,
-				err: {
-					message: "No se ha seleccionado un archivo",
-				},
-			});
+  async (req, res) => {
+    const id = req.params.id;
 
-		const image = req.files.image;
-		const validExtensions = ["png", "jpg", "gif", "jpeg"];
-		const cutName = image.name.split(".");
-		const extension = cutName[cutName.length - 1];
+    if (!req.files)
+      return res.status(400).json({
+        ok: false,
+        err: {
+          message: "No se ha seleccionado un archivo",
+        },
+      });
 
-		if (!validExtensions.includes(extension))
-			return res.status(400).json({
-				ok: false,
-				err: {
-					message: "Las extensiones validas son: " + validExtensions.join(", "),
-				},
-				ext: extension,
-			});
+    const image = req.files.image;
+    const validExtensions = ["png", "jpg", "gif", "jpeg"];
+    const cutName = image.name.split(".");
+    const extension = cutName[cutName.length - 1];
 
-		const imageName = `${id}.${extension}`;
+    if (!validExtensions.includes(extension))
+      return res.status(400).json({
+        ok: false,
+        err: {
+          message: "Las extensiones validas son: " + validExtensions.join(", "),
+        },
+        ext: extension,
+      });
 
-		image.mv(`src/public/img/products/${imageName}`, (err) => {
-			if (err) return res.status(500).json({ ok: false, err });
-			updateProduct(id, res, req, imageName);
-		});
-	}
+    const imageName = `${id}.${extension}`;
+
+    image.mv(`src/public/img/products/${imageName}`, (err) => {
+      if (err) return res.status(500).json({ ok: false, err });
+      updateProduct(id, res, req, imageName);
+    });
+  }
 );
 
 router.get(
-	"/admin/upload/:id/delete",
-	[isAuthenticated, isAdmin],
-	async (req, res) => {
-		const id = req.params.id;
+  "/admin/upload/:id/delete",
 
-		Product.findByIdAndRemove(id, (err, product) => {
-			if (err) return res.status(400).json({ ok: false, err });
+  async (req, res) => {
+    const id = req.params.id;
 
-			if (product === null)
-				return res.status(400).json({
-					ok: false,
-					err: { message: "Id no encontrado" },
-				});
+    Product.findByIdAndRemove(id, (err, product) => {
+      if (err) return res.status(400).json({ ok: false, err });
 
-			deleteFile(product.photo_url);
-			req.flash("success_msg", "Producto eliminado correctamente");
-			res.redirect("/admin/products");
-		});
-	}
+      if (product === null)
+        return res.status(400).json({
+          ok: false,
+          err: { message: "Id no encontrado" },
+        });
+
+      deleteFile(product.photo_url);
+      res.json({ ok: true });
+    });
+  }
 );
 
 function updateProduct(id, res, req, imageName) {
-	Product.findById(id, (err, product) => {
-		if (err) {
-			deleteFile(imageName);
-			return res.status(500).json({ ok: false, err });
-		}
+  Product.findById(id, (err, product) => {
+    if (err) {
+      deleteFile(imageName);
+      return res.status(500).json({ ok: false, err });
+    }
 
-		if (!product) {
-			deleteFile(imageName);
-			return res.status(400).json({
-				ok: false,
-				err: { message: "El producto no existe" },
-			});
-		}
+    if (!product) {
+      deleteFile(imageName);
+      return res.status(400).json({
+        ok: false,
+        err: { message: "El producto no existe" },
+      });
+    }
 
-		// if (product.photo_url) deleteFile(product.pho	to_url);
+    // if (product.photo_url) deleteFile(product.pho	to_url);
 
-		product.photo_url = imageName;
+    product.photo_url = imageName;
 
-		product.save((err, productDB) => {
-			if (err) return res.status(500).json({ ok: false, err });
-			req.flash("success_msg", "Foto actualizada correctamente");
-			res.redirect("/admin/products");
-		});
-	});
+    product.save((err, productDB) => {
+      if (err) return res.status(500).json({ ok: false, err });
+      res.json({ ok: true });
+    });
+  });
 }
 
 function deleteFile(fileName) {
-	const pathFile = path.resolve(
-		__dirname,
-		`../../public/img/products/${fileName}`
-	);
-	if (fs.existsSync(pathFile)) {
-		fs.unlinkSync(pathFile);
-	}
+  const pathFile = path.resolve(
+    __dirname,
+    `../../public/img/products/${fileName}`
+  );
+  if (fs.existsSync(pathFile)) {
+    fs.unlinkSync(pathFile);
+  }
 }
 
 module.exports = router;
